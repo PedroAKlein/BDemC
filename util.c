@@ -52,7 +52,7 @@ void imprimeTabela(PGconn *conn, const char *tabela){
 
 void campoObrigatorio(char *var, char *text, int tam){
     while(1){
-        printf("\n*%s (0 para sair): ", text);
+        printf("\n%s (0 para sair): ", text);
         fgets(var, tam, stdin);
 
         if(var[0] != '\n')
@@ -63,15 +63,12 @@ void campoObrigatorio(char *var, char *text, int tam){
     remove_quebraLinha(var);
 }
 
-void campoNormal(char *var, char *text, int tam){
-    printf("\n*%s (0 para sair): ", text);
-    fgets(var, tam, stdin);
-    remove_quebraLinha(var);
-}
-
 void campoID(PGconn *conn, char *var, char *text, int tam, const char *tabela){
     while(1){
         campoObrigatorio(var, text, tam);
+
+        if(var[0] == '0')
+            return;
 
         if(strcmp(var, "help") == 0){
             

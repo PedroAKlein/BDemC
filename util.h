@@ -20,7 +20,6 @@ void imprimeTabela(PGconn *conn, const char *tabela);
 void remove_quebraLinha(char *str);
 char *checkString(char *str);
 void campoObrigatorio(char *campo, char *text, int tam);
-void campoNormal(char *campo, char *text, int tam);
 void campoID(PGconn *conn, char *campo, char *text, int tam, const char *tabela);
 int existeId(PGconn *conn, const char *tabela, const char *id);
 int soDigitos(const char *str);

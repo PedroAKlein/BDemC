@@ -33,14 +33,50 @@ int resultStatus(PGconn *conn, PGresult *res){
 
 void cadastrarCliente(PGconn *conn){
     char nome[NOME], cpf[CPF], tel[TEL];
+    int opt;
 
     campoObrigatorio(nome, "Nome", NOME);
+    if(nome[0] == '0')
+        return;
 
-    printf("\nExemplo: 111.111.111-11\n");
-    campoNormal(cpf, "CPF", CPF);
+    do {
+        printf("\nSelecione qual dado deseja compartilhar:\n");
+        printf(" 1 - CPF\n 2 - Telefone\n 3 - CPF e Telefone\n");
+        printf("Opcao: ");
+    } while(opt < 1 || opt > 3);
 
-    printf("\nExemplo: 55123456789\n");
-    campoNormal(tel, "Telefone", TEL);
+    if(opt == 1){
+        printf("\nExemplo: 111.111.111-11\n");
+        campoObrigatorio(cpf, "CPF", CPF);
+        
+        if(cpf[0] == '0')
+            return;
+
+        tel[0] = '\n';
+
+    } else if(opt == 2){
+        printf("\nExemplo: 55123456789\n");
+        campoObrigatorio(tel, "Telefone", TEL);
+        
+        if(tel[0] == '0')
+            return;
+
+        cpf[0] = '\n';
+
+    } else {
+        printf("\nExemplo: 111.111.111-11\n");
+        campoObrigatorio(cpf, "CPF", CPF);
+
+        if(cpf[0] == '0')
+            return;
+
+        printf("\nExemplo: 55123456789\n");
+        campoObrigatorio(tel, "Telefone", TEL);
+
+        if(tel[0] == '0')
+            return;
+    }
+
 
     const char *valores[3] = {nome, checkString(cpf), checkString(tel)};
     
@@ -59,11 +95,17 @@ void cadastrarProduto(PGconn *conn){
     char desc[DESC], preco[PRECO], estoq[ESTOQ];
 
     campoObrigatorio(desc, "Descricao", DESC);
+    if(desc[0] == '0')
+        return;
 
     printf("\nExemplo: 12.50");
     campoObrigatorio(preco, "Preco", PRECO);
+    if(preco[0] == '0')
+        return;
 
     campoObrigatorio(estoq, "Estoque", ESTOQ);
+    if(estoq[0] == '0')
+        return;
 
     const char *valores[3] = {desc, preco, estoq};
     
@@ -82,6 +124,8 @@ void cadastrarVenda(PGconn *conn){
     char idClient[ID];
 
     campoID(conn, idClient, "ID do Cliente", ID, cliente);
+    if(idClient[0] == '0')
+        return;
     
     const char *valores[1] = {idClient};
     
