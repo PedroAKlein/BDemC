@@ -8,3 +8,4 @@ PGconn *conectar();
 int resultStatus(PGconn *conn, PGresult *res);
 void cadastrarCliente(PGconn *conn);
 void cadastrarProduto(PGconn *conn);
+void cadastrarVenda(PGconn *conn);

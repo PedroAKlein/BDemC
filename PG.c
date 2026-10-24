@@ -32,7 +32,7 @@ int resultStatus(PGconn *conn, PGresult *res){
 }
 
 void cadastrarCliente(PGconn *conn){
-    char nome[NOME], cpf[CPF], tel[TEL];
+    const char nome[NOME], cpf[CPF], tel[TEL];
 
     campoObrigatorio(nome, "Nome", NOME);
 
@@ -60,7 +60,7 @@ void cadastrarCliente(PGconn *conn){
 }
 
 void cadastrarProduto(PGconn *conn){
-    char desc[DESC], preco[PRECO], estoq[ESTOQ];
+    const char desc[DESC], preco[PRECO], estoq[ESTOQ];
 
     campoObrigatorio(desc, "Descricao", DESC);
 
@@ -83,16 +83,26 @@ void cadastrarProduto(PGconn *conn){
 }
 
 void cadastrarVenda(PGconn *conn){
-    char desc[DESC], preco[PRECO], estoq[ESTOQ];
+    const char idClient[ID];
 
-    campoObrigatorio(desc, "Descricao", DESC);
+    while(1){
+        campoObrigatorio(idClient, "ID do Cliente", ID);
 
-    printf("\nExemplo: 12.50");
-    campoObrigatorio(preco, "Preco", PRECO);
+        if(!soDigitos(idClient)){
+            printf("\nO ID deve possuir apenas digitos!\n");
+            continue;
+        }
+        
+        if(!existeId(conn, "cliente", idClient)){
+            printf("\nO ID nao existe!\n");
+            continue;
+        }
+        
+        break;
+    }
+    
 
-    campoObrigatorio(estoq, "Estoque", ESTOQ);
-
-    const char *valores[3] = {desc, preco, estoq};
+    const char *valores[1] = {idClient};
     
     PGresult *res = PQexecParams(conn, "INSERT INTO produto (descricao, preco, estoque) VALUES ($1, $2, $3)", 3, NULL, valores, NULL, NULL, 0);
 

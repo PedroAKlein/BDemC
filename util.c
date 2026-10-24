@@ -52,7 +52,7 @@ void imprimeTabela(PGconn *conn, const char *tabela){
 
 void campoObrigatorio(char *campo, char *text, int tam){
     while(1){
-        printf("\n*%s: ", text);
+        printf("\n*%s (0 para sair): ", text);
         fgets(campo, tam, stdin);
 
         if(campo[0] != '\n')
@@ -78,4 +78,15 @@ int existeId(PGconn *conn, const char *tabela, const char *id){
 
     PQclear(res);
     return existe;
+}
+
+int soDigitos(const char *str){
+    if(str[0] == '\0') 
+        return 0;
+
+    for (; *str; str++)
+        if (*str < '0' || *str > '9') 
+            return 0;
+
+    return 1;
 }
