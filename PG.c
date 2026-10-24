@@ -32,19 +32,15 @@ int resultStatus(PGconn *conn, PGresult *res){
 }
 
 void cadastrarCliente(PGconn *conn){
-    const char nome[NOME], cpf[CPF], tel[TEL];
+    char nome[NOME], cpf[CPF], tel[TEL];
 
     campoObrigatorio(nome, "Nome", NOME);
 
     printf("\nExemplo: 111.111.111-11\n");
-    printf("CPF: ");
-    fgets(cpf, CPF, stdin);
-    remove_quebraLinha(cpf);
+    campoNormal(cpf, "CPF", CPF);
 
     printf("\nExemplo: 55123456789\n");
-    printf("Telefone: ");
-    fgets(tel, TEL, stdin);
-    remove_quebraLinha(tel);
+    campoNormal(tel, "Telefone", TEL);
 
     const char *valores[3] = {nome, checkString(cpf), checkString(tel)};
     
@@ -60,7 +56,7 @@ void cadastrarCliente(PGconn *conn){
 }
 
 void cadastrarProduto(PGconn *conn){
-    const char desc[DESC], preco[PRECO], estoq[ESTOQ];
+    char desc[DESC], preco[PRECO], estoq[ESTOQ];
 
     campoObrigatorio(desc, "Descricao", DESC);
 
@@ -83,33 +79,22 @@ void cadastrarProduto(PGconn *conn){
 }
 
 void cadastrarVenda(PGconn *conn){
-    const char idClient[ID];
+    char idClient[ID];
 
-    while(1){
-        campoObrigatorio(idClient, "ID do Cliente", ID);
-
-        if(!soDigitos(idClient)){
-            printf("\nO ID deve possuir apenas digitos!\n");
-            continue;
-        }
-        
-        if(!existeId(conn, "cliente", idClient)){
-            printf("\nO ID nao existe!\n");
-            continue;
-        }
-        
-        break;
-    }
+    campoID(conn, idClient, "ID do Cliente", ID, cliente);
     
-
     const char *valores[1] = {idClient};
     
-    PGresult *res = PQexecParams(conn, "INSERT INTO produto (descricao, preco, estoque) VALUES ($1, $2, $3)", 3, NULL, valores, NULL, NULL, 0);
+    PGresult *res = PQexecParams(conn, "INSERT INTO venda (id_cliente) VALUES ($1)", 1, NULL, valores, NULL, NULL, 0);
 
-    if(PQresultStatus(res) == PGRES_COMMAND_OK)
-        printf("\nProduto cadastrado!\n");
-    
-    else
+    if(PQresultStatus(res) == PGRES_TUPLES_OK){
+        PQclear(res);
+        
+        char idVenda[ID], idProd[ID], quant[QUANT], precoUni[PRECO];
+
+
+
+    } else
         fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
 
     PQclear(res);

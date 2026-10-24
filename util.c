@@ -50,17 +50,56 @@ void imprimeTabela(PGconn *conn, const char *tabela){
     imprime(conn, sql, tabela);
 }
 
-void campoObrigatorio(char *campo, char *text, int tam){
+void campoObrigatorio(char *var, char *text, int tam){
     while(1){
         printf("\n*%s (0 para sair): ", text);
-        fgets(campo, tam, stdin);
+        fgets(var, tam, stdin);
 
-        if(campo[0] != '\n')
+        if(var[0] != '\n')
             break;
 
         printf("%s eh obrigatorio!\n", text);
     }
-    remove_quebraLinha(campo);
+    remove_quebraLinha(var);
+}
+
+void campoNormal(char *var, char *text, int tam){
+    printf("\n*%s (0 para sair): ", text);
+    fgets(var, tam, stdin);
+    remove_quebraLinha(var);
+}
+
+void campoID(PGconn *conn, char *var, char *text, int tam, const char *tabela){
+    while(1){
+        campoObrigatorio(var, text, tam);
+
+        if(strcmp(var, "help") == 0){
+            
+            if(strcmp(tabela, "cliente") == 0)
+                imprime(conn, "SELECT id, nome FROM cliente ORDER BY nome", "cliente");
+
+            else if(strcmp(tabela, "produto") == 0)
+                imprime(conn, "SELECT id, descricao FROM produto ORDER BY descricao", "produto");
+
+            else
+                imprime(conn, "SELECT id, data FROM venda ORDER BY data", "venda");
+
+            continue;
+        }
+
+        if(!soDigitos(var)){
+            printf("\nO ID deve possuir apenas digitos!\n");
+            continue;
+        }
+        
+        if(!existeId(conn, tabela, var)){
+            printf("\nO ID nao existe!\n");
+            printf("Digite \"help\" para ver a tabela de %ss\n", tabela);
+            continue;
+        }
+
+        break;
+    }
 }
 
 int existeId(PGconn *conn, const char *tabela, const char *id){
