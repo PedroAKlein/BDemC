@@ -6,6 +6,6 @@
 
 PGconn *conectar();
 int resultStatus(PGconn *conn, PGresult *res);
-void cadastrarCliente(PGconn *conn);
-void cadastrarProduto(PGconn *conn);
-void cadastrarVenda(PGconn *conn);
+PGresult *mandarDB(PGconn *conn, const char *tabela, const char *colunas, int nValues, const char **valores, const char *retorno);
+int executa(PGconn *conn, const char *sql, int n, const char *const *valores);
+void pegaValor(PGresult *res, int linha, int coluna, char *var, int tam);

@@ -16,7 +16,7 @@ char *checkString(char *str){
     return (str[0] == '\0' || str[0] == '\n') ? NULL : str;
 }
 
-void imprime(PGconn *conn, const char *sql, const char *tabela){
+void imprime(PGconn *conn, const char *sql){
     PGresult *res = PQexec(conn, sql);
 
     if(resultStatus(conn, res) == 1)
@@ -24,11 +24,6 @@ void imprime(PGconn *conn, const char *sql, const char *tabela){
 
     int linhas  = PQntuples(res);
     int colunas = PQnfields(res);
-
-    printf("\n");
-    printf("\n");
-    printf("Tabela: %s", tabela);
-    printf("\n");
 
     for(int i=0; i<colunas; i++)
         printf("%-20s", PQfname(res, i));
@@ -47,12 +42,12 @@ void imprime(PGconn *conn, const char *sql, const char *tabela){
 void imprimeTabela(PGconn *conn, const char *tabela){
     char sql[128];
     snprintf(sql, sizeof(sql), "SELECT * FROM %s", tabela);
-    imprime(conn, sql, tabela);
+    imprime(conn, sql);
 }
 
 void campoObrigatorio(char *var, char *text, int tam){
     while(1){
-        printf("\n%s (0 para sair): ", text);
+        printf("\n%s: ", text);
         fgets(var, tam, stdin);
 
         if(var[0] != '\n')
@@ -71,15 +66,16 @@ void campoID(PGconn *conn, char *var, char *text, int tam, const char *tabela){
             return;
 
         if(strcmp(var, "help") == 0){
+            printf("\n");
             
             if(strcmp(tabela, "cliente") == 0)
-                imprime(conn, "SELECT id, nome FROM cliente ORDER BY nome", "cliente");
+                imprime(conn, "SELECT id, nome, cpf, telefone FROM cliente ORDER BY nome");
 
             else if(strcmp(tabela, "produto") == 0)
-                imprime(conn, "SELECT id, descricao FROM produto ORDER BY descricao", "produto");
+                imprime(conn, "SELECT id, descricao FROM produto ORDER BY descricao");
 
             else
-                imprime(conn, "SELECT id, data FROM venda ORDER BY data", "venda");
+                imprime(conn, "SELECT id, data FROM venda ORDER BY data");
 
             continue;
         }
@@ -116,6 +112,7 @@ int existeId(PGconn *conn, const char *tabela, const char *id){
     return existe;
 }
 
+// retorna 1 se for apenas digitos, 0 caso contrario
 int soDigitos(const char *str){
     if(str[0] == '\0') 
         return 0;

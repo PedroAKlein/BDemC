@@ -3,7 +3,6 @@
 #include <string.h>
 #include <libpq-fe.h>
 #include "PG.h"
-#include "util.h"
 
 PGconn *conectar(){
     PGconn *conn = PQconnectdb(
@@ -19,8 +18,7 @@ PGconn *conectar(){
     return conn;
 }
 
-// retorna 1 se deu erro
-// retorna 0 se deu certo
+// retorna 1 se falhou, 0 se deu certo
 int resultStatus(PGconn *conn, PGresult *res){
     if(PQresultStatus(res) != PGRES_TUPLES_OK){
         fprintf(stderr, "Erro na consulta: %s\n", PQerrorMessage(conn));
@@ -31,115 +29,43 @@ int resultStatus(PGconn *conn, PGresult *res){
     return 0;
 }
 
-void cadastrarCliente(PGconn *conn){
-    char nome[NOME], cpf[CPF], tel[TEL];
-    int opt;
+// simplificacao da funcao do postgresql
+PGresult *mandarDB(PGconn *conn, const char *tabela, const char *colunas, int nValues, const char **valores, const char *retorno){
+    char sql[256], marcadores[128] = "", tmp[12];
 
-    campoObrigatorio(nome, "Nome", NOME);
-    if(nome[0] == '0')
-        return;
-
-    do {
-        printf("\nSelecione qual dado deseja compartilhar:\n");
-        printf(" 1 - CPF\n 2 - Telefone\n 3 - CPF e Telefone\n");
-        printf("Opcao: ");
-    } while(opt < 1 || opt > 3);
-
-    if(opt == 1){
-        printf("\nExemplo: 111.111.111-11\n");
-        campoObrigatorio(cpf, "CPF", CPF);
-        
-        if(cpf[0] == '0')
-            return;
-
-        tel[0] = '\n';
-
-    } else if(opt == 2){
-        printf("\nExemplo: 55123456789\n");
-        campoObrigatorio(tel, "Telefone", TEL);
-        
-        if(tel[0] == '0')
-            return;
-
-        cpf[0] = '\n';
-
-    } else {
-        printf("\nExemplo: 111.111.111-11\n");
-        campoObrigatorio(cpf, "CPF", CPF);
-
-        if(cpf[0] == '0')
-            return;
-
-        printf("\nExemplo: 55123456789\n");
-        campoObrigatorio(tel, "Telefone", TEL);
-
-        if(tel[0] == '0')
-            return;
+    for(int i = 1; i <= nValues; i++){
+        if (i > 1) strcat(marcadores, ", ");
+        snprintf(tmp, sizeof tmp, "$%d", i);
+        strcat(marcadores, tmp);
     }
 
+    int n = snprintf(sql, sizeof sql, "INSERT INTO %s (%s) VALUES (%s)", tabela, colunas, marcadores);
 
-    const char *valores[3] = {nome, checkString(cpf), checkString(tel)};
-    
-    PGresult *res = PQexecParams(conn, "INSERT INTO cliente (nome, cpf, telefone) VALUES ($1, $2, $3)", 3, NULL, valores, NULL, NULL, 0);
+    if (retorno)
+        snprintf(sql + n, sizeof sql - n, " RETURNING %s", retorno);
 
-    if(PQresultStatus(res) == PGRES_COMMAND_OK)
-        printf("\nCliente cadastrado!\n");
-    
-    else
-        fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
-
-    PQclear(res);
+    return PQexecParams(conn, sql, nValues, NULL, valores, NULL, NULL, 0);
 }
 
-void cadastrarProduto(PGconn *conn){
-    char desc[DESC], preco[PRECO], estoq[ESTOQ];
-
-    campoObrigatorio(desc, "Descricao", DESC);
-    if(desc[0] == '0')
-        return;
-
-    printf("\nExemplo: 12.50");
-    campoObrigatorio(preco, "Preco", PRECO);
-    if(preco[0] == '0')
-        return;
-
-    campoObrigatorio(estoq, "Estoque", ESTOQ);
-    if(estoq[0] == '0')
-        return;
-
-    const char *valores[3] = {desc, preco, estoq};
+// executa um comando que nao devolve linhas (BEGIN, COMMIT, UPDATE, INSERT...)
+// retorna 1 se deu certo, 0 se falhou
+int executa(PGconn *conn, const char *sql, int n, const char *const *valores){
+    PGresult *res = PQexecParams(conn, sql, n, NULL, valores, NULL, NULL, 0);
     
-    PGresult *res = PQexecParams(conn, "INSERT INTO produto (descricao, preco, estoque) VALUES ($1, $2, $3)", 3, NULL, valores, NULL, NULL, 0);
-
-    if(PQresultStatus(res) == PGRES_COMMAND_OK)
-        printf("\nProduto cadastrado!\n");
+    int ok = (PQresultStatus(res) == PGRES_COMMAND_OK);
     
-    else
+    if (!ok)
         fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
-
+    
     PQclear(res);
+    return ok;
 }
 
-void cadastrarVenda(PGconn *conn){
-    char idClient[ID];
-
-    campoID(conn, idClient, "ID do Cliente", ID, cliente);
-    if(idClient[0] == '0')
+// atribui um valor do DB a uma string
+void pegaValor(PGresult *res, int linha, int coluna, char *var, int tam){
+    if (linha >= PQntuples(res) || coluna >= PQnfields(res)) {
+        var[0] = '\0';
         return;
-    
-    const char *valores[1] = {idClient};
-    
-    PGresult *res = PQexecParams(conn, "INSERT INTO venda (id_cliente) VALUES ($1)", 1, NULL, valores, NULL, NULL, 0);
-
-    if(PQresultStatus(res) == PGRES_TUPLES_OK){
-        PQclear(res);
-        
-        char idVenda[ID], idProd[ID], quant[QUANT], precoUni[PRECO];
-
-
-
-    } else
-        fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
-
-    PQclear(res);
+    }
+    snprintf(var, tam, "%s", PQgetvalue(res, linha, coluna));
 }

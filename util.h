@@ -15,7 +15,7 @@
 #define QUANT 15
 #define ID 12
 
-void imprime(PGconn *conn, const char *sql, const char *tabela);
+void imprime(PGconn *conn, const char *sql);
 void imprimeTabela(PGconn *conn, const char *tabela);
 void remove_quebraLinha(char *str);
 char *checkString(char *str);
