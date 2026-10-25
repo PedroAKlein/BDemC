@@ -2,9 +2,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libpq-fe.h>
-#include "cadastro.h"
 #include "PG.h"
 #include "util.h"
+#include "func.h"
+
+void imprime(PGconn *conn, const char *sql){
+    PGresult *res = PQexec(conn, sql);
+
+    if(resultStatus(conn, res) == 1)
+        return;
+
+    int linhas  = PQntuples(res);
+    int colunas = PQnfields(res);
+
+    for(int i=0; i<colunas; i++)
+        printf("%-35s", PQfname(res, i));
+
+    printf("\n");
+
+    for(int i=0; i<linhas; i++){
+        for(int j=0; j<colunas; j++)
+            printf("%-35s", PQgetvalue(res, i, j));
+
+        printf("\n");
+    }
+}
+
+void imprimeTabela(PGconn *conn, const char *tabela){
+    char sql[128];
+    snprintf(sql, sizeof(sql), "SELECT * FROM %s", tabela);
+    imprime(conn, sql);
+}
 
 void cadastrarCliente(PGconn *conn){
     char nome[NOME], cpf[CPF], tel[TEL];
@@ -119,6 +147,7 @@ void cadastrarVenda(PGconn *conn){
     }
 
     pegaValor(res, 0, 0, idVenda, ID);
+    PQclear(res);
 
     int itens = 0;
 
@@ -196,6 +225,5 @@ void cadastrarVenda(PGconn *conn){
 
     if(executa(conn, "COMMIT", 0, NULL))
         printf("\nVenda %s registrada!\n", idVenda);
-
-    PQclear(res);
 }
+

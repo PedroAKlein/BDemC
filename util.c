@@ -2,8 +2,93 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libpq-fe.h>
+#include "func.h"
 #include "util.h"
 #include "PG.h"
+
+void menu(){
+    printf("\n----== MENU ==----\n");
+    printf(" 1 - Cadastro\n");
+    printf(" 2 - Consulta\n");
+    printf(" 3 - Alteracao\n");
+    printf(" 4 - Organizacao\n");
+    printf(" 5 - Registro\n");
+    printf(" 6 - Relatorio\n");
+    printf(" 0 - Sair\n");
+    printf("\n");
+    printf("Opcao: ");
+}
+
+void menuCoringa(char *titulo){
+    printf("\n----== %s ==----\n", titulo);
+    printf(" Selecione uma tabela:\n");
+    printf("  1 - Clientes\n");
+    printf("  2 - Produtos\n");
+    printf("  3 - Vendas\n");
+    printf(" 0 - Sair\n");
+    printf("\n");
+    printf("Opcao: ");
+}
+
+void consulta(PGconn *conn){
+    int opt = -1;
+
+    while(opt != 0){
+        menuCoringa("ALTERACAO");
+    
+        scanf("%d", &opt);
+        getchar();
+    
+        switch(opt){
+            case cliente: imprime(conn, "cliente"); break;
+            case produto: imprime(conn, "produto"); break;
+            case venda: imprime(conn, "venda"); break;
+            case SAIR: return;
+    
+            default: printf("Opcao Invalida!\n"); break;
+        }
+    }
+}
+
+void cadastro(PGconn *conn){
+    int opt = -1;
+
+    while(opt != 0){
+        menuCoringa("CADASTRO");
+    
+        scanf("%d", &opt);
+        getchar();
+    
+        switch(opt){
+            case cliente: cadastrarCliente(conn); break;
+            case produto: cadastrarProduto(conn); break;
+            case venda: cadastrarVenda(conn); break;
+            case SAIR: return;
+    
+            default: printf("Opcao Invalida!\n"); break;
+        }
+    }
+}
+
+void alteracao(PGconn *conn){
+    int opt = -1;
+
+    while(opt != 0){
+        menuCoringa("ALTERACAO");
+    
+        scanf("%d", &opt);
+        getchar();
+    
+        switch(opt){
+            case cliente: ; break;
+            case produto: ; break;
+            case venda: ; break;
+            case SAIR: return;
+    
+            default: printf("Opcao Invalida!\n"); break;
+        }
+    }
+}
 
 void remove_quebraLinha(char *str){
     size_t len = strlen(str);
@@ -14,35 +99,6 @@ void remove_quebraLinha(char *str){
 // se a string for vazia, seu valor sera NULL
 char *checkString(char *str){
     return (str[0] == '\0' || str[0] == '\n') ? NULL : str;
-}
-
-void imprime(PGconn *conn, const char *sql){
-    PGresult *res = PQexec(conn, sql);
-
-    if(resultStatus(conn, res) == 1)
-        return;
-
-    int linhas  = PQntuples(res);
-    int colunas = PQnfields(res);
-
-    for(int i=0; i<colunas; i++)
-        printf("%-20s", PQfname(res, i));
-
-    printf("\n");
-
-    for(int i=0; i<linhas; i++){
-        for(int j=0; j<colunas; j++)
-            printf("%-20s", PQgetvalue(res, i, j));
-
-        printf("\n");
-    }
-
-}
-
-void imprimeTabela(PGconn *conn, const char *tabela){
-    char sql[128];
-    snprintf(sql, sizeof(sql), "SELECT * FROM %s", tabela);
-    imprime(conn, sql);
 }
 
 void campoObrigatorio(char *var, char *text, int tam){
@@ -72,7 +128,7 @@ void campoID(PGconn *conn, char *var, char *text, int tam, const char *tabela){
                 imprime(conn, "SELECT id, nome, cpf, telefone FROM cliente ORDER BY nome");
 
             else if(strcmp(tabela, "produto") == 0)
-                imprime(conn, "SELECT id, descricao FROM produto ORDER BY descricao");
+                imprime(conn, "SELECT id, descricao, estoque FROM produto ORDER BY descricao");
 
             else
                 imprime(conn, "SELECT id, data FROM venda ORDER BY data");
@@ -95,21 +151,10 @@ void campoID(PGconn *conn, char *var, char *text, int tam, const char *tabela){
     }
 }
 
-int existeId(PGconn *conn, const char *tabela, const char *id){
-    char sql[128];
-    snprintf(sql, sizeof sql, "SELECT 1 FROM %s WHERE id = $1", tabela);
-
-    const char *valores[1] = {id};
-    PGresult *res = PQexecParams(conn, sql, 1, NULL, valores, NULL, NULL, 0);
-
-    int existe = 0;
-    if (PQresultStatus(res) == PGRES_TUPLES_OK)
-        existe = PQntuples(res) > 0;
-    else
-        fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
-
-    PQclear(res);
-    return existe;
+void campoNormal(char *var, char *text, int tam){
+    printf("\n%s (0 para sair): ", text);
+    fgets(var, tam, stdin);
+    remove_quebraLinha(var);
 }
 
 // retorna 1 se for apenas digitos, 0 caso contrario

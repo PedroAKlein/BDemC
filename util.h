@@ -15,11 +15,14 @@
 #define QUANT 15
 #define ID 12
 
-void imprime(PGconn *conn, const char *sql);
-void imprimeTabela(PGconn *conn, const char *tabela);
+void menu();
+void menuCoringa(char *titulo);
+void consulta(PGconn *conn);
+void cadastro(PGconn *conn);
+void alteracao(PGconn *conn);
 void remove_quebraLinha(char *str);
 char *checkString(char *str);
 void campoObrigatorio(char *campo, char *text, int tam);
 void campoID(PGconn *conn, char *campo, char *text, int tam, const char *tabela);
-int existeId(PGconn *conn, const char *tabela, const char *id);
+void campoNormal(char *var, char *text, int tam);
 int soDigitos(const char *str);

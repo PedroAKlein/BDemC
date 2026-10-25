@@ -69,3 +69,20 @@ void pegaValor(PGresult *res, int linha, int coluna, char *var, int tam){
     }
     snprintf(var, tam, "%s", PQgetvalue(res, linha, coluna));
 }
+
+int existeId(PGconn *conn, const char *tabela, const char *id){
+    char sql[128];
+    snprintf(sql, sizeof sql, "SELECT 1 FROM %s WHERE id = $1", tabela);
+
+    const char *valores[1] = {id};
+    PGresult *res = PQexecParams(conn, sql, 1, NULL, valores, NULL, NULL, 0);
+
+    int existe = 0;
+    if (PQresultStatus(res) == PGRES_TUPLES_OK)
+        existe = PQntuples(res) > 0;
+    else
+        fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
+
+    PQclear(res);
+    return existe;
+}
