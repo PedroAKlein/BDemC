@@ -7,7 +7,7 @@
 #include "util.h"
 
 int main(){
-    int opt = -1, exit = 0;
+    int opt = -1, sair = 0;
 
     PGconn *conn = conectar();
 
@@ -33,12 +33,12 @@ int main(){
                 
                 break;
 
-            case SAIR: exit = 1; break;
+            case SAIR: sair = 1; break;
             
             default: printf("Opcao Invalida!\n"); break;
         }
 
-        if(exit) break;
+        if(sair) break;
     }
 
     PQfinish(conn); 

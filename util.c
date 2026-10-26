@@ -34,15 +34,15 @@ void consulta(PGconn *conn){
     int opt = -1;
 
     while(opt != 0){
-        menuCoringa("ALTERACAO");
+        menuCoringa("CONSULTA");
     
         scanf("%d", &opt);
         getchar();
     
         switch(opt){
-            case cliente: imprime(conn, "cliente"); break;
-            case produto: imprime(conn, "produto"); break;
-            case venda: imprime(conn, "venda"); break;
+            case tab_cliente: imprimeTabela(conn, "cliente"); break;
+            case tab_produto: imprimeTabela(conn, "produto"); break;
+            case tab_venda: imprimeVendas(conn); break;
             case SAIR: return;
     
             default: printf("Opcao Invalida!\n"); break;
@@ -60,9 +60,9 @@ void cadastro(PGconn *conn){
         getchar();
     
         switch(opt){
-            case cliente: cadastrarCliente(conn); break;
-            case produto: cadastrarProduto(conn); break;
-            case venda: cadastrarVenda(conn); break;
+            case tab_cliente: cadastrarCliente(conn); break;
+            case tab_produto: cadastrarProduto(conn); break;
+            case tab_venda: cadastrarVenda(conn); break;
             case SAIR: return;
     
             default: printf("Opcao Invalida!\n"); break;
@@ -80,9 +80,9 @@ void alteracao(PGconn *conn){
         getchar();
     
         switch(opt){
-            case cliente: ; break;
-            case produto: ; break;
-            case venda: ; break;
+            case tab_cliente: alterarCliente(conn); break;
+            case tab_produto: alterarProduto(conn); break;
+            case tab_venda: alterarVenda(conn); break;
             case SAIR: return;
     
             default: printf("Opcao Invalida!\n"); break;
@@ -118,7 +118,7 @@ void campoID(PGconn *conn, char *var, char *text, int tam, const char *tabela){
     while(1){
         campoObrigatorio(var, text, tam);
 
-        if(var[0] == '0')
+        if(strcmp(var, "0") == 0)
             return;
 
         if(strcmp(var, "help") == 0){
@@ -152,19 +152,74 @@ void campoID(PGconn *conn, char *var, char *text, int tam, const char *tabela){
 }
 
 void campoNormal(char *var, char *text, int tam){
-    printf("\n%s (0 para sair): ", text);
+    printf("\n%s: ", text);
     fgets(var, tam, stdin);
     remove_quebraLinha(var);
 }
 
 // retorna 1 se for apenas digitos, 0 caso contrario
 int soDigitos(const char *str){
-    if(str[0] == '\0') 
-        return 0;
+    if(str[0] == '\0' || str[0] == '\n') 
+        return 1;
 
     for (; *str; str++)
         if (*str < '0' || *str > '9') 
             return 0;
 
+    return 1;
+}
+
+// retorna 1 se tiver os digitos especiais, 0 caso contrario
+int checkCPF(char *cpf){
+    if(cpf[0] == '\0' || cpf[0] == '\n')
+        return 1;
+    
+    if(cpf[3] != '.')
+        return 0;
+
+    if(cpf[7] != '.')
+        return 0;
+
+    if(cpf[11] != '-')
+        return 0;
+
+    return 1;
+}
+
+// retorna 1 se tiver o digito especial, 0 caso contrario
+int checkPRECO(char *preco){
+    if(preco[0] == '\0') 
+        return 1;
+
+    int ponto = 0;
+      
+    for(char *p = preco; *p; p++){
+        if(*p == '.'){ 
+            if(ponto) 
+                return 0; 
+            
+            ponto = 1; 
+
+        } else if(*p < '0' || *p > '9') 
+            return 0;
+    }
+    return 1;
+}
+
+int checkDATA(char *d){
+    if(d[0] == '\0') 
+        return 1;
+
+    if(strlen(d) != 10) 
+        return 0;
+
+    for(int i = 0; i < 10; i++){
+        if(i == 4 || i == 7){ 
+            if(d[i] != '-') 
+                return 0; 
+                
+        } else if(d[i] < '0' || d[i] > '9') 
+            return 0;
+    }
     return 1;
 }

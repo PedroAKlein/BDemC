@@ -1,7 +1,7 @@
 //* TABELAS
-#define cliente 1
-#define produto 2
-#define venda 3
+#define tab_cliente 1
+#define tab_produto 2
+#define tab_venda 3
 #define item_venda 4
 
 PGconn *conectar();

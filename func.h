@@ -1,5 +1,10 @@
 void imprime(PGconn *conn, const char *sql);
 void imprimeTabela(PGconn *conn, const char *tabela);
+void imprimeVendas(PGconn *conn);
 void cadastrarCliente(PGconn *conn);
 void cadastrarProduto(PGconn *conn);
 void cadastrarVenda(PGconn *conn);
+void alterarCliente(PGconn *conn);
+void alterarProduto(PGconn *conn);
+void mostrarVenda(PGconn *conn, const char *idVenda);
+void alterarVenda(PGconn *conn);

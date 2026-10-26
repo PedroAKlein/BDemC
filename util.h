@@ -14,6 +14,7 @@
 #define ESTOQ 15
 #define QUANT 15
 #define ID 12
+#define DATA 12
 
 void menu();
 void menuCoringa(char *titulo);
@@ -26,3 +27,6 @@ void campoObrigatorio(char *campo, char *text, int tam);
 void campoID(PGconn *conn, char *campo, char *text, int tam, const char *tabela);
 void campoNormal(char *var, char *text, int tam);
 int soDigitos(const char *str);
+int checkCPF(char *cpf);
+int checkPRECO(char *preco);
+int checkDATA(char *d);
