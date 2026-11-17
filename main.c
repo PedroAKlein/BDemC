@@ -13,26 +13,13 @@ int main(){
 
     while(opt != 0){
         menu();
-        scanf("%d", &opt);
-        getchar();
+        opt = lerOpcao();
 
         switch(opt){
             case CADASTRO: cadastro(conn); break;
             case CONSULTA: consulta(conn); break;
             case ALTERACAO: alteracao(conn); break;
-
-            case ORGANIZACAO:
-                
-                break;
-
-            case REGISTRO:
-                
-                break;
-
-            case RELATORIO:
-                
-                break;
-
+            case RELATORIO: relatorio(conn); break;
             case SAIR: sair = 1; break;
             
             default: printf("Opcao Invalida!\n"); break;

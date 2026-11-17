@@ -54,46 +54,40 @@ void cadastrarCliente(PGconn *conn){
     int opt;
 
     campoObrigatorio(nome, "Nome (0 para sair)", NOME);
-    if(nome[0] == '0')
+    if(strcmp(nome, "0") == 0)
         return;
 
     do {
         printf("\nSelecione qual dado deseja compartilhar:\n");
-        printf(" 1 - CPF\n 2 - Telefone\n 3 - CPF e Telefone\n");
+        printf(" 1 - CPF\n 2 - Telefone\n 3 - CPF e Telefone\n 0 - Cancelar\n");
         printf("Opcao: ");
-        scanf("%d", &opt);
-        getchar();
-    } while(opt < 1 || opt > 3);
+        opt = lerOpcao();
+    } while(opt < 0 || opt > 3);
+
+    if(opt == 0)
+        return;
 
     if(opt == 1){
         printf("\nExemplo: 111.111.111-11\n");
-        campoObrigatorio(cpf, "CPF (0 para sair)", CPF);
-        
-        if(strcmp(cpf, "0") == 0)
+        if(!lerCPF(cpf))
             return;
 
         tel[0] = '\n';
 
     } else if(opt == 2){
         printf("\nExemplo: 55123456789\n");
-        campoObrigatorio(tel, "Telefone (0 para sair)", TEL);
-        
-        if(strcmp(tel, "0") == 0)
+        if(!lerTelefone(tel))
             return;
 
         cpf[0] = '\n';
 
     } else {
         printf("\nExemplo: 111.111.111-11\n");
-        campoObrigatorio(cpf, "CPF (0 para sair)", CPF);
-
-        if(strcmp(cpf, "0") == 0)
+        if(!lerCPF(cpf))
             return;
 
         printf("\nExemplo: 55123456789\n");
-        campoObrigatorio(tel, "Telefone (0 para sair)", TEL);
-
-        if(strcmp(tel, "0") == 0)
+        if(!lerTelefone(tel))
             return;
     }
 
@@ -104,9 +98,16 @@ void cadastrarCliente(PGconn *conn){
 
     if(PQresultStatus(res) == PGRES_COMMAND_OK)
         printf("\nCliente cadastrado!\n");
-    
-    else
-        fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
+
+    else {
+        const char *codigo = PQresultErrorField(res, PG_DIAG_SQLSTATE);
+
+        if(codigo && strcmp(codigo, "23505") == 0)
+            printf("\nJa existe um cliente com esse CPF.\n");
+
+        else
+            fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
+    }
 
     PQclear(res);
 }
@@ -118,14 +119,11 @@ void cadastrarProduto(PGconn *conn){
     if(strcmp(desc, "0") == 0)
         return;
 
-    printf("\nExemplo: 12.50");
-    campoObrigatorio(preco, "Preco (0 para sair)", PRECO);
-    if(strcmp(preco, "0") == 0)
+    printf("\nExemplo: 12.50\n");
+    if(!lerPreco(preco))
         return;
 
-    campoObrigatorio(estoq, "Estoque (0 para sair)", ESTOQ);
-    if(strcmp(estoq, "0") == 0)
-        return;
+    lerEstoque(estoq);
 
     const char *valores[3] = {desc, preco, estoq};
     
@@ -263,14 +261,14 @@ void alterarCliente(PGconn *conn){
         while(!checkCPF(cpf)){
             printf("\nSiga o exemplo, nao se esqueca dos \'.\' e do \'-\'!\n");
             printf("Exemplo: 111.111.111-11\n");
-            campoNormal(tel, "NOVO Telefone (ENTER para pular)", TEL);
+            campoNormal(cpf, "NOVO CPF (ENTER para pular)", CPF);
         }
 
 
         printf("\nExemplo: 55123456789\n");
         campoNormal(tel, "NOVO Telefone (ENTER para pular)", TEL);
-        while(!soDigitos(tel)){
-            printf("\nApenas numeros!\n");
+        while(!checkTEL(tel)){
+            printf("\nApenas numeros (ate 20 digitos)!\n");
             printf("Exemplo: 55123456789\n");
             campoNormal(tel, "NOVO Telefone (ENTER para pular)", TEL);
         }
@@ -323,14 +321,14 @@ void alterarProduto(PGconn *conn){
         printf("\nExemplo: 12.99");
         campoNormal(preco, "NOVO Preco (ENTER para pular)", PRECO);
         while(!checkPRECO(preco)){
-            printf("\nSiga o exemplo, nao se esqueca do \'.\'!\n");
+            printf("\nPreco invalido! Use ate 8 digitos, ponto e ate 2 casas decimais, maior que zero.\n");
             printf("Exemplo: 12.99\n");
             campoNormal(preco, "NOVO Preco (ENTER para pular)", PRECO);
         }
 
         campoNormal(estoq, "NOVO Estoque (ENTER para pular)", ESTOQ);
-        while(!soDigitos(estoq)){
-            printf("\nApenas numeros!\n");
+        while(!checkINT(estoq)){
+            printf("\nApenas numeros (ate 9 digitos)!\n");
             campoNormal(estoq, "NOVO Estoque (ENTER para pular)", ESTOQ);
         }
 
@@ -349,7 +347,16 @@ void alterarProduto(PGconn *conn){
 
             else
                 printf("\nNenhum registro alterado.\n");
-        } 
+
+        } else {
+            const char *codigo = PQresultErrorField(res, PG_DIAG_SQLSTATE);
+
+            if(codigo && (strcmp(codigo, "22003") == 0 || strcmp(codigo, "22P02") == 0 || strcmp(codigo, "23514") == 0))
+                printf("\nValor invalido ou fora do limite permitido.\n");
+
+            else
+                fprintf(stderr, "Erro: %s\n", PQresultErrorMessage(res));
+        }
         PQclear(res);
     }
 }
@@ -491,4 +498,196 @@ void alterarVenda(PGconn *conn){
                 printf("\nQuantidade alterada!\n");
         }
     }
+}
+
+void rel_cliente(PGconn *conn){
+    int opt = -1;
+
+    while(opt != 0){
+        printf("\nSelecione uma opcao:\n");
+        printf(" 1 - Cliente com maior quantidade de compras\n");
+        printf(" 2 - Cliente com maior valor total gasto\n");
+        printf(" 3 - Historico de compras do cliente\n");
+        printf("0 - Sair\n\n");
+        printf("Opcao: ");
+
+        opt = lerOpcao();
+
+        printf("\n");
+
+        switch(opt){
+            case 1: rel_cli_maiorQuantidade(conn); break;
+            case 2: rel_cli_maiorValor(conn); break;
+            case 3: rel_cli_historico(conn); break;
+            case 0: return;
+
+            default: printf("\nOpcao invalida!\n"); break;
+
+        }
+    }
+}
+
+void rel_cli_maiorQuantidade(PGconn *conn){
+    imprime(conn, 
+        "SELECT c.id, c.nome, COUNT(DISTINCT v.id) AS compras, "
+        "SUM(i.quantidade * i.preco_unitario) AS total "
+        "FROM cliente c "
+        "JOIN venda v ON v.id_cliente = c.id "
+        "JOIN item_venda i ON i.id_venda = v.id "
+        "GROUP BY c.id, c.nome "
+        "ORDER BY compras DESC, total DESC;");
+}
+
+void rel_cli_maiorValor(PGconn *conn){
+    imprime(conn, 
+        "SELECT c.id, c.nome, SUM(i.quantidade * i.preco_unitario) AS total "
+        "FROM cliente c "
+        "JOIN venda v ON v.id_cliente = c.id "
+        "JOIN item_venda i ON i.id_venda = v.id "
+        "GROUP BY c.id, c.nome "
+        "ORDER BY total DESC;");
+}
+
+void rel_cli_historico(PGconn *conn){
+    char idClient[ID], sql[512];
+
+    campoID(conn, idClient, "ID do Cliente (0 para sair)", ID, "cliente");
+    if(strcmp(idClient, "0") == 0)
+        return;
+
+    printf("\n");
+    snprintf(sql, sizeof sql,
+        "SELECT v.id AS venda, v.data, p.descricao AS produto, "
+        "i.quantidade, i.preco_unitario, "
+        "i.quantidade * i.preco_unitario AS subtotal "
+        "FROM venda v "
+        "JOIN item_venda i ON i.id_venda = v.id "
+        "JOIN produto p ON p.id = i.id_produto "
+        "WHERE v.id_cliente = %s "
+        "ORDER BY v.data, v.id, p.descricao", idClient);
+    imprime(conn, sql);
+}
+
+void rel_produto(PGconn *conn){
+    int opt = -1;
+
+    while(opt != 0){
+        printf("\nSelecione uma opcao:\n");
+        printf(" 1 - Produtos mais vendidos (unidades)\n");
+        printf(" 2 - Produtos com maior faturamento\n");
+        printf(" 3 - Vezes vendido e valor gerado por um produto\n");
+        printf("0 - Sair\n\n");
+        printf("Opcao: ");
+
+        opt = lerOpcao();
+
+        printf("\n");
+        switch(opt){
+            case 1: rel_prod_maiorQuantidade(conn); break;
+            case 2: rel_prod_maiorFaturamento(conn); break;
+            case 3: rel_prod_checkID(conn); break;
+            case 0: return;
+
+            default: printf("\nOpcao invalida!\n"); break;
+        }
+    }
+}
+
+void rel_prod_maiorQuantidade(PGconn *conn){
+    imprime(conn, 
+        "SELECT p.id, p.descricao, SUM(i.quantidade) AS unidades "
+        "FROM produto p "
+        "JOIN item_venda i ON i.id_produto = p.id "
+        "GROUP BY p.id, p.descricao "
+        "ORDER BY unidades DESC, p.descricao;");
+}
+
+void rel_prod_maiorFaturamento(PGconn *conn){
+    imprime(conn, 
+        "SELECT p.id, p.descricao, "
+        "SUM(i.quantidade) AS unidades, "
+        "SUM(i.quantidade * i.preco_unitario) AS faturamento "
+        "FROM produto p "
+        "JOIN item_venda i ON i.id_produto = p.id "
+        "GROUP BY p.id, p.descricao "
+        "ORDER BY faturamento DESC, p.descricao;");
+}
+
+void rel_prod_checkID(PGconn *conn){
+    char idProduto[ID], sql[512];
+
+    campoID(conn, idProduto, "ID do Produto (0 para sair)", ID, "produto");
+    if(strcmp(idProduto, "0") == 0)
+        return;
+
+    printf("\n");
+    snprintf(sql, sizeof sql,
+        "SELECT p.id, p.descricao, "
+        "COUNT(i.id_venda) AS vezes_vendido, "
+        "COALESCE(SUM(i.quantidade), 0) AS unidades, "
+        "COALESCE(SUM(i.quantidade * i.preco_unitario), 0) AS valor_gerado "
+        "FROM produto p "
+        "LEFT JOIN item_venda i ON i.id_produto = p.id "
+        "WHERE p.id = %s "
+        "GROUP BY p.id, p.descricao;", idProduto);
+    imprime(conn, sql);
+}
+
+void rel_venda(PGconn *conn){
+    int opt = -1;
+
+    while(opt != 0){
+        printf("\nSelecione uma opcao:\n");
+        printf(" 1 - Vendas em um intervalo\n");
+        printf(" 2 - Valor total obtido em um intervalo\n");
+        printf("0 - Sair\n\n");
+        printf("Opcao: ");
+
+        opt = lerOpcao();
+
+        printf("\n");
+
+        switch(opt){
+            case 1: rel_ven_intervalo(conn); break;
+            case 2: rel_ven_total(conn); break;
+            case 0: return;
+
+            default: printf("\nOpcao invalida!\n"); break;
+        }
+    }
+}
+
+void rel_ven_intervalo(PGconn *conn){
+    char d1[DATA], d2[DATA], sql[512];
+
+    if(!lerPeriodo(d1, d2))
+        return;
+
+    // as datas so tem digitos e '-' (checkDATA), entao as aspas sao seguras
+    printf("\n");
+    snprintf(sql, sizeof sql,
+        "SELECT v.id AS venda, v.data, c.nome AS cliente, "
+        "SUM(i.quantidade * i.preco_unitario) AS total "
+        "FROM venda v "
+        "JOIN cliente c ON c.id = v.id_cliente "
+        "JOIN item_venda i ON i.id_venda = v.id "
+        "WHERE v.data BETWEEN '%s'::date AND '%s'::date "
+        "GROUP BY v.id, v.data, c.nome "
+        "ORDER BY v.data, v.id", d1, d2);
+    imprime(conn, sql);
+}
+
+void rel_ven_total(PGconn *conn){
+    char d1[DATA], d2[DATA], sql[512];
+
+    if(!lerPeriodo(d1, d2))
+        return;
+
+    printf("\n");
+    snprintf(sql, sizeof sql,
+        "SELECT COALESCE(SUM(i.quantidade * i.preco_unitario), 0) AS total_periodo "
+        "FROM venda v "
+        "JOIN item_venda i ON i.id_venda = v.id "
+        "WHERE v.data BETWEEN '%s'::date AND '%s'::date", d1, d2);
+    imprime(conn, sql);
 }

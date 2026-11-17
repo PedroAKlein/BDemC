@@ -1,16 +1,14 @@
 #define CADASTRO 1
 #define CONSULTA 2
 #define ALTERACAO 3
-#define ORGANIZACAO 4
-#define REGISTRO 5
-#define RELATORIO 6
+#define RELATORIO 4
 #define SAIR 0
 
 #define NOME 102
 #define CPF 16
 #define TEL 22
 #define DESC 102
-#define PRECO 12
+#define PRECO 14
 #define ESTOQ 15
 #define QUANT 15
 #define ID 12
@@ -21,6 +19,7 @@ void menuCoringa(char *titulo);
 void consulta(PGconn *conn);
 void cadastro(PGconn *conn);
 void alteracao(PGconn *conn);
+void relatorio(PGconn *conn);
 void remove_quebraLinha(char *str);
 char *checkString(char *str);
 void campoObrigatorio(char *campo, char *text, int tam);
@@ -30,3 +29,12 @@ int soDigitos(const char *str);
 int checkCPF(char *cpf);
 int checkPRECO(char *preco);
 int checkDATA(char *d);
+int lerOpcao(void);
+int checkINT(char *str);
+int checkTEL(char *tel);
+int lerCPF(char *cpf);
+int lerTelefone(char *tel);
+int lerPreco(char *preco);
+void lerEstoque(char *estoq);
+int lerData(char *var, char *texto);
+int lerPeriodo(char *d1, char *d2);
