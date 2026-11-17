@@ -6,7 +6,7 @@
 
 PGconn *conectar(){
     PGconn *conn = PQconnectdb(
-        "host=localhost port=5432 dbname=loja user=postgres password=pedroca"
+        "host=localhost port=5432 dbname=loja user=SEUUSER password=SUASENHA"
     );
     
     if (PQstatus(conn) != CONNECTION_OK) {

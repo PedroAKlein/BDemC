@@ -1,0 +1,43 @@
+# Sistema de Vendas - Laboratorio de Programacao II
+
+Sistema em C + PostgreSQL (libpq) com cadastro, consulta e alteracao de
+clientes, produtos e vendas, alem de relatorios.
+
+## Requisitos (Debian/Ubuntu)
+
+    sudo apt install postgresql libpq-dev gcc
+
+## 1. Criar o banco e restaurar os dados
+
+O arquivo `banco.sql` nao cria o banco, entao crie antes:
+
+    createdb -U postgres -h localhost loja
+    psql -U postgres -h localhost loja < banco.sql
+
+## 2. Configurar a conexao
+
+A conexao esta em `PG.c`, na funcao `conectar()`:
+
+    host=localhost port=5432 dbname=loja user=SEUUSER password=SUASENHA
+
+Ajuste `user` e `password` para os do seu PostgreSQL, se forem diferentes.
+
+## 3. Compilar
+
+    gcc -Wall -Wextra *.c -o loja -I$(pg_config --includedir) -lpq
+
+## 4. Executar
+
+    ./loja
+
+## Menus
+
+- 1 Cadastro: clientes, produtos e vendas (venda com cliente + itens; baixa o estoque)
+- 2 Consulta: lista as tabelas
+- 3 Alteracao: clientes, produtos e vendas (ENTER mantem o valor atual)
+- 4 Relatorio:
+  - Clientes: que mais compraram, de maior valor total, historico de um cliente
+  - Produtos: mais vendidos, maior faturamento, vezes vendido e valor gerado por produto
+  - Vendas: por intervalo de datas (AAAA-MM-DD) e total do periodo
+
+Em campos de ID, digite `help` para listar os registros existentes e `0` para cancelar.
